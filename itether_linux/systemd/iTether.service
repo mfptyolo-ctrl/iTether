@@ -1,0 +1,20 @@
+[Unit]
+Description=iTether background watchdog (iPhone Personal Hotspot over USB)
+Documentation=man:iTether
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env python3 -m itether_core.watchdog
+Restart=always
+RestartSec=5
+User=root
+
+# Hardening: only allow netlink + sysfs writes we actually need.
+ProtectSystem=strict
+ReadWritePaths=/etc/iTether
+NoNewPrivileges=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+# iTether - allow NetworkManager / systemd-networkd to leave the iPhone
+# tethering netdev alone and let cdc_ncm/ipheth claim it.
+#
+# Without these, usbmuxd or ModemManager can race for the devnode and
+# the user sees the dreaded "USB device has an error and cannot be
+# recognized" / no netdev appears.
+
+# Tell NetworkManager to ignore Apple CDC-NCM/ipheth devnodes.
+ENV{ID_VENDOR_ID}=="05ac", ENV{ID_MODEL_ID}=="12a8", ENV{NM_UNMANAGED}="1"
+ENV{ID_VENDOR_ID}=="05ac", ENV{ID_MODEL_ID}=="12ab", ENV{NM_UNMANAGED}="1"
+ENV{ID_VENDOR_ID}=="05ac", ENV{ID_MODEL_ID}=="1905", ENV{NM_UNMANAGED}="1"
+ENV{ID_VENDOR_ID}=="05ac", ENV{ID_MODEL_ID}=="12a0", ENV{NM_UNMANAGED}="1"
+ENV{ID_VENDOR_ID}=="05ac", ENV{ID_MODEL_ID}=="12a4", ENV{NM_UNMANAGED}="1"
+
+# Don't let usbmuxd bind MI_00 of the Apple composite - that conflicts
+# with usbmuxd's own mode-switch and steals the control endpoint.
+ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="12a8", ENV{USBMUXD_DISABLE}="1"
+ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="12ab", ENV{USBMUXD_DISABLE}="1"
+ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="1905", ENV{USBMUXD_DISABLE}="1"

@@ -1,0 +1,100 @@
+name: iTether CI
+
+on:
+  push:
+    branches: [main, "arena/*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install runtime deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iproute2 dnsmasq nftables
+      - name: Install iTether
+        working-directory: itether
+        run: |
+          pip install -e .
+      - name: Run unit tests
+        working-directory: itether
+        run: |
+          make test
+      - name: Run live demo
+        working-directory: itether
+        run: |
+          make demo
+
+  inf-lint:
+    name: Lint Windows INF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run python-based INF sanity check
+        working-directory: itether
+        run: |
+          python3 -c "
+          import re
+          inf = open('itether_windows/INF/itether_usbncm.inf').read()
+          assert '[Version]' in inf, 'missing [Version] section'
+          assert '[Manufacturer]' in inf, 'missing [Manufacturer]'
+          m = re.search(r'\[(.+?)\.NT\\\$ARCH\\\$\]', inf)
+          assert m, 'missing NT\$ARCH$ manufacturer section'
+          assert '[AppleNCM_Install]' in inf, 'missing install section'
+          # Every %s reference must be defined in [Strings]
+          refs = set(re.findall(r'%([A-Za-z]+)%', inf))
+          defs = set(re.findall(r'^([A-Za-z]+)\\s*=', open('itether_windows/INF/itether_usbncm.inf').read(), re.M))
+          print('refs:', refs, 'defs:', defs)
+          assert refs <= defs, f'unresolved %%refs: {refs - defs}'
+          print('INF lint OK')
+          "
+
+  psm1-syntax:
+    name: PowerShell module basic syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PowerShell
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https
+          wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo apt-get install -y powershell
+      - name: Parse iTether.psm1
+        working-directory: itether
+        run: |
+          pwsh -NoProfile -Command "
+            \$err = \$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              './itether_windows/iTether.psm1', [ref]\$null, [ref]\$err) | Out-Null
+            if (\$err) { \$err | ForEach-Object { Write-Host \$_ }; exit 1 }
+            Write-Host 'PowerShell parse OK'
+          "
+
+  install-sh-syntax:
+    name: Linux install.sh shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Run shellcheck
+        working-directory: itether
+        run: |
+          shellcheck itether_linux/install.sh

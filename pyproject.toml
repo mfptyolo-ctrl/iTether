@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "itether"
+version = "1.0.0"
+description = "Personal Hotspot over USB without iTunes / Apple Devices"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "iTether contributors" }]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Networking",
+]
+
+[project.scripts]
+itether = "itether_core.__main__:main"
+
+[tool.setuptools]
+packages = ["itether_core", "itether_linux"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+itether_linux = ["systemd/*.service", "udev/*.rules"]

@@ -1,0 +1,73 @@
+; iTether CDC-NCM driver INF for Apple iPhone/iPad tethering
+;
+; Bind Microsoft's in-box UsbNcm.sys host driver to the Apple CDC-NCM
+; tethering function so that Personal Hotspot over USB works without
+; installing iTunes. Targets the same USB\VID_05AC&PID_12A8 / 12AB /
+; 1905 devnodes iTunes' netaapl64.inf used to claim.
+;
+; Why this works without a code-signed .sys:
+;   UsbNcm.sys ships in-box on Windows 10 1903+ and Windows 11. It is
+;   already Microsoft-signed and present in DriverStore. This INF only
+;   adds a hardware-ID match so the Plug-and-Play manager binds the
+;   already-present service to the iPhone devnode.
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = Net
+ClassGuid   = {4D36E972-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderString%
+DriverVer   = 10/01/2026,1.0.0.0
+
+[Manufacturer]
+%AppleMfg% = AppleSection, NT$ARCH$
+
+[AppleSection.NT$ARCH$]
+; === Apple iPhone 5..X (Lightning-era) ===
+; Match every MI_xx child of the iPhone composite so that whichever
+; function ends up being the CDC-NCM tethering function gets bound
+; to Microsoft UsbNcm.sys.
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A8&MI_00
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A8&MI_01
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A8&MI_02
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A8&MI_03
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A8&MI_04
+
+; === Apple iPad (Lightning-era) ===
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12AB&MI_00
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12AB&MI_01
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12AB&MI_02
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12AB&MI_03
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12AB&MI_04
+
+; === Apple Silicon Mac over USB-C (shares same NCM protocol) ===
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_1905&MI_00
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_1905&MI_01
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_1905&MI_02
+
+; === Newer iPhones / iPads via USB-C ===
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A0&MI_02
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A0&MI_03
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A4&MI_02
+%AppleNCMDeviceDesc% = AppleNCM_Install, USB\VID_05AC&PID_12A4&MI_03
+
+
+; === Standard NCM driver install ===
+
+[AppleNCM_Install]
+Characteristics = 0x84
+BusType         = 1
+
+[AppleNCM_Install.Services]
+; The actual service (UsbNcm) is registered out of the box by Windows.
+; We just say "this hardware ID uses it".
+AddService = UsbNcm, 0x00000002
+
+
+[ControlFlags]
+ExcludeFromSelect = *
+
+
+[Strings]
+ProviderString         = "iTether Project"
+AppleMfg               = "Apple, Inc."
+AppleNCMDeviceDesc     = "Apple Mobile Device Ethernet (iTether CDC-NCM)"
