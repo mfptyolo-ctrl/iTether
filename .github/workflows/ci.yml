@@ -27,15 +27,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y iproute2 dnsmasq nftables
       - name: Install iTether
-        working-directory: itether
         run: |
           pip install -e .
       - name: Run unit tests
-        working-directory: itether
         run: |
           make test
       - name: Run live demo
-        working-directory: itether
         run: |
           make demo
 
@@ -45,7 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run python-based INF sanity check
-        working-directory: itether
         run: |
           python3 -c "
           import re
@@ -77,7 +73,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y powershell
       - name: Parse iTether.psm1
-        working-directory: itether
         run: |
           pwsh -NoProfile -Command "
             \$err = \$null
@@ -95,6 +90,5 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get install -y shellcheck
       - name: Run shellcheck
-        working-directory: itether
         run: |
           shellcheck itether_linux/install.sh
