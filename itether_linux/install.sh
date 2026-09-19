@@ -14,7 +14,7 @@ NAME=iTether
 
 require_root() {
     if [[ $EUID -ne 0 ]]; then
-        echo "Please run as root (sudo $0 $*)" >&2
+        echo "Please run as root (sudo $0 ${1:-install})" >&2
         exit 1
     fi
 }
@@ -62,7 +62,7 @@ uninstall() {
     systemctl disable --now iTether.service || true
     rm -f /etc/systemd/system/iTether.service
     rm -f /etc/udev/rules.d/99-itether.rules
-    rm -rf "$PREFIX/lib/$NAME"
+    rm -rf "${PREFIX:?}/lib/$NAME"
     rm -f "$PREFIX/bin/iTether-tray" "$PREFIX/bin/iTether-diag"
     udevadm control --reload-rules || true
     systemctl daemon-reload || true
@@ -70,7 +70,7 @@ uninstall() {
 }
 
 case "${1:-install}" in
-    install) require_root; install_files ;;
-    uninstall) require_root; uninstall ;;
+    install) require_root "$@"; install_files ;;
+    uninstall) require_root "$@"; uninstall ;;
     *) echo "Usage: $0 [install|uninstall]" ;;
 esac
